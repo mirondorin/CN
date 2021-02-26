@@ -32,6 +32,7 @@ def ex2_2():
 
 
 def lentz(x, eps):
+    # function tan is pi periodic
     x %= math.pi
     b = 0
     f_prev = b
@@ -61,6 +62,7 @@ def lentz(x, eps):
             return f
 
 def mac_laurin(x):
+    # if x in [pi/4, pi/2) tan(x) = 1/tan(pi/2 - x)
     x %= math.pi
     inverse = False
     if x > math.pi / 4:
@@ -92,6 +94,9 @@ import numpy as np
 
 
 # sample data
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
 df1 = pd.DataFrame({'a':[v2[0],v3[0]], 'b':[v2[1],v3[1]], 'c':[v2[2],v3[2]]})
 df2 = pd.DataFrame(ex3_resultlist, columns=['lentz','mac_laurin','tan'])
 # create output widgets
