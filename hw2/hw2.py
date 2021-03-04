@@ -2,6 +2,7 @@ import numpy as np
 import random
 import copy
 from sklearn import datasets
+import copy
 
 def eps():
     for iterations in range (1000, 0, -1):
@@ -10,6 +11,51 @@ def eps():
             return u
 
 EPS = eps()
+
+def calc_transpose(m):
+    return [[m[j][i] for j in range(len(m))] for i in range(len(m[0]))]
+
+def get_identity(n):
+    m=[[0 for x in range(n)] for y in range(n)]
+    for i in range(0,n):
+        m[i][i] = 1
+    return m
+
+def get_matrix_minor(m,i,j):
+    #return [row[:j] + row[j+1:] for row in (m[:i]+m[i+1:])]
+    return np.delete(np.delete(m,i,axis=0), j, axis=1)
+
+def calc_determinant(m):
+    #base case for 2x2 matrix
+    if m.shape[0] == 2:
+        return m[0][0]*m[1][1]-m[0][1]*m[1][0]
+
+    determinant = 0
+    for c in range(m.shape[0]):
+        determinant += ((-1)**c)*m[0][c]*calc_determinant(get_matrix_minor(m,0,c))
+    return determinant
+
+def get_matrix_inverse(m):
+    determinant = calc_determinant(m)
+    #special case for 2x2 matrix:
+    if len(m) == 2:
+        return [[m[1][1]/determinant, -1*m[0][1]/determinant],
+                [-1*m[1][0]/determinant, m[0][0]/determinant]]
+
+    #find matrix of cofactors
+    cofactors = []
+    for r in range(len(m)):
+        cofactorRow = []
+        for c in range(len(m)):
+            minor = get_matrix_minor(m,r,c)
+            cofactorRow.append(((-1)**(r+c)) * calc_determinant(minor))
+        cofactors.append(cofactorRow)
+    cofactors = calc_transpose(cofactors)
+    for r in range(len(cofactors)):
+        for c in range(len(cofactors)):
+            cofactors[r][c] = cofactors[r][c]/determinant
+    return cofactors
+
 
 def generate_random_spd(size):
     system = []
@@ -83,17 +129,25 @@ def verify_sol(matrix, x_chol, result):
         norm += sol[i] ** 2
     return np.sqrt(norm)
 
+def read_matrix_keyboard():
+    pass
+
 if __name__ == "__main__":
-    matrix, vec = generate_random_spd(100)
-    matrix = datasets.make_spd_matrix(100)
+    matrix, vec = generate_random_spd(8)
+    matrix = datasets.make_spd_matrix(8)
     lower = np.zeros((matrix.shape[0], matrix.shape[1]))
     L = cholesky_factorization(matrix, matrix.shape[1], 0, lower)
     L_t = L.T
-    if np.linalg.det(matrix) == 0:
+    if calc_determinant(L) * calc_determinant(L_t) == 0:
         print("Determinant is 0")
         exit(0)
     x_sol = x_chol(L, L_t, vec)
     norm = verify_sol(matrix, x_sol, vec)
     np_norm = np.linalg.solve(matrix, vec)
-    print(norm)
-    print(np.linalg.norm(np_norm))
+    #print(norm)
+    #print(np.linalg.norm(np_norm))
+    inv_custom = np.array(get_matrix_inverse(L))
+    inv_np = np.linalg.inv(L)
+    #print(inv_custom)
+    #print(inv_np)
+    print(np.linalg.norm(inv_custom - inv_np))
