@@ -3,6 +3,7 @@ import random
 import copy
 from sklearn import datasets
 import copy
+import time
 
 def eps():
     for iterations in range (1000, 0, -1):
@@ -95,7 +96,7 @@ def cholesky_factorization(system, n, col, lower):
         return lower
     return cholesky_factorization(system, n, col, lower)
 
-def x_chol(L, L_t, b_vec):
+def solve_system(L, L_t, b_vec):
     n = L.shape[0]
     y_vec = [0 for i in range(0, n)]
 
@@ -121,8 +122,8 @@ def x_chol(L, L_t, b_vec):
             x_vec[j] = 10e-12
     return x_vec
 
-def verify_sol(matrix, x_chol, result):
-    sol = np.matmul(matrix, np.array(x_chol))
+def verify_sol(matrix, solve_system, result):
+    sol = np.matmul(matrix, np.array(solve_system))
     sol = np.subtract(sol, np.array(result))
     norm = 0
     for i in range (0, sol.shape[0]):
@@ -132,22 +133,47 @@ def verify_sol(matrix, x_chol, result):
 def read_matrix_keyboard():
     pass
 
+def aprox_inverse(matrix, matrix_chol, L, L_t):
+    n = matrix.shape[0]
+    b_vec = np.zeros((n, 1))
+    for col in range(0, n):
+        b_vec[col] = 1
+        x_star = solve_system(L, L_t, b_vec)
+        row = 0
+        for el in x_star:
+            matrix_chol[row][col] = el
+            row += 1
+        b_vec[col] = 0
+    return matrix_chol
+
 if __name__ == "__main__":
-    matrix, vec = generate_random_spd(8)
-    matrix = datasets.make_spd_matrix(8)
+    start_time = time.time()
+    matrix, vec = generate_random_spd(100)
+    matrix = datasets.make_spd_matrix(100)
     lower = np.zeros((matrix.shape[0], matrix.shape[1]))
     L = cholesky_factorization(matrix, matrix.shape[1], 0, lower)
     L_t = L.T
-    if calc_determinant(L) * calc_determinant(L_t) == 0:
+    L_np = np.linalg.cholesky(matrix)
+    L_t_np = L_np.T
+    # if calc_determinant(L) * calc_determinant(L_t) == 0: ye, no
+    if np.linalg.det(L) * np.linalg.det(L_t) == 0:
         print("Determinant is 0")
         exit(0)
-    x_sol = x_chol(L, L_t, vec)
+    x_sol = solve_system(L, L_t, vec)
     norm = verify_sol(matrix, x_sol, vec)
-    np_norm = np.linalg.solve(matrix, vec)
-    #print(norm)
-    #print(np.linalg.norm(np_norm))
-    inv_custom = np.array(get_matrix_inverse(L))
-    inv_np = np.linalg.inv(L)
-    #print(inv_custom)
-    #print(inv_np)
-    print(np.linalg.norm(inv_custom - inv_np))
+    x_sol_np = np.linalg.solve(matrix, vec)
+    norm_np = np.matmul(matrix, x_sol_np)
+    print("Norm computed by us:", norm)
+    print("Norm computed by numpy:", np.linalg.norm(norm_np - vec, ord = 2))
+    # Interface for this please, tyty
+    # print(L_np) 
+    # print(L_t_np)
+    matrix_chol = np.zeros((matrix.shape[0], matrix.shape[1]))
+    inv_custom = aprox_inverse(matrix, matrix_chol, L, L_t)
+    # inv_custom = np.array(get_matrix_inverse(L))
+    inv_np = np.linalg.pinv(matrix)
+    # print(inv_custom)
+    # print(inv_np)
+    # I think inv_np is computed wrong
+    print("Norm of ||A_chol - A_bibl||:", np.linalg.norm(inv_custom - inv_np, ord = 1))
+    print("--- %s seconds ---" % (time.time() - start_time))
