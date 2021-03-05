@@ -131,7 +131,27 @@ def verify_sol(matrix, solve_system, result):
     return np.sqrt(norm)
 
 def read_matrix_keyboard():
-    pass
+    print("Type matrix dimension:")
+    n = int(input())
+    matrix = []
+    for i in range(n):
+        line = []
+        for j in range(n):
+            print("line", i, "col", j, "=")
+            val = float(input())
+            line.append(val)
+        matrix.append(line)
+    return np.array(matrix)
+
+def read_matrix_file(filename):
+    matrix = np.loadtxt(filename)
+    return matrix
+
+def write_matrix_file(filename, matrix):
+    matrix = np.matrix(matrix)
+    with open(filename, 'w') as f:
+        for line in matrix:
+            np.savetxt(f, line, fmt='%.2f')
 
 def aprox_inverse(matrix, matrix_chol, L, L_t):
     n = matrix.shape[0]
@@ -150,6 +170,10 @@ if __name__ == "__main__":
     start_time = time.time()
     matrix, vec = generate_random_spd(100)
     matrix = datasets.make_spd_matrix(100)
+
+    #matrix = read_matrix_file('matrix.txt')
+    #write_matrix_file('test.txt', matrix)
+
     lower = np.zeros((matrix.shape[0], matrix.shape[1]))
     L = cholesky_factorization(matrix, matrix.shape[1], 0, lower)
     L_t = L.T
