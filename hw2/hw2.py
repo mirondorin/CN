@@ -96,27 +96,27 @@ def cholesky_factorization(system, n, col, lower):
         return lower
     return cholesky_factorization(system, n, col, lower)
 
-def cholesky_factorization_flat(system, col, n, lower):
+def bonus_cholesky_factorization(system, n, col, lower):
     prev_sum = 0
 
     for row in range (0, n):
         if col == row:
             for k in range(0, col):
-                prev_sum += lower[col + k] ** 2
-            lower[row + col] = np.sqrt(system[row+col] - prev_sum)
+                prev_sum += lower[(col * (col+1))//2 + k] ** 2
+            lower[(row * (row+1))//2 + col] = np.sqrt(system[(row * (row+1))//2 + col] - prev_sum)
         elif col < row:
             prev_sum = 0
             for k in range(0, col):
-                prev_sum += lower[row+k] * lower[col+k]
-            if abs(lower[col+col]) > EPS:
-                lower[row+col] = (system[row+col] - prev_sum) / lower[col+col]
+                prev_sum += lower[(row * (row+1))//2 + k] * lower[(col * (col+1))//2 + k]
+            if abs(lower[(col * (col+1))//2 + col]) > EPS:
+                lower[(row * (row+1))//2 + col] = (system[(row * (row+1))//2 + col] - prev_sum) / lower[(col * (col+1))//2 + col]
             else:
-                lower[row+col] = 10e-12
+                lower[(row * (row+1))//2 + col] = 10e-12
 
     col += 1
     if col == n: 
         return lower
-    return cholesky_factorization_flat(system, col, n, lower)
+    return bonus_cholesky_factorization(system, n, col, lower)
 
 
 def matrixtri_to_vec(matrix):
@@ -127,7 +127,7 @@ def matrixtri_to_vec(matrix):
                 flat.append(matrix[i][j])
     return np.array(flat)
 
-def solve_system(L, L_t, b_vec):
+def solve_system(L, b_vec):
     n = L.shape[0]
     y_vec = [0 for i in range(0, n)]
 
@@ -147,8 +147,33 @@ def solve_system(L, L_t, b_vec):
         value = y_vec[i]
         for j in range (n-1, i - 1, -1):
             value -= L[j][i] * x_vec[j]
-        if abs(L_t[i][i]) > EPS:
+        if abs(L[i][i]) > EPS:
             x_vec[j] = value / L[i][i]
+        else:
+            x_vec[j] = 10e-12
+    return x_vec
+
+def bonus_solve_system(L, n, b_vec):
+    y_vec = [0 for i in range(0, n)]
+
+    for i in range (0, n):
+        value = b_vec[i]
+        for j in range (0, i + 1):
+            if i == j:
+                if abs(L[(i*(i+1))//2 + j]) > EPS:
+                    y_vec[j] = value / L[(i*(i+1))//2 + j]
+                else:
+                    y_vec[j] = 10e-12
+            else:
+                value -= L[(i*(i+1))//2 + j] * y_vec[j]
+    
+    x_vec = [0 for i in range(0, n)]
+    for i in range (n-1, -1, -1):
+        value = y_vec[i]
+        for j in range (n-1, i - 1, -1):
+            value -= L[(j*(j+1))//2 + i] * x_vec[j]
+        if abs(L[(i*(i+1))//2 + i]) > EPS:
+            x_vec[j] = value / L[(i*(i+1))//2 + i]
         else:
             x_vec[j] = 10e-12
     return x_vec
@@ -189,7 +214,7 @@ def aprox_inverse(matrix, matrix_chol, L, L_t):
     b_vec = np.zeros(n)
     for col in range(0, n):
         b_vec[col] = 1
-        x_star = solve_system(L, L_t, b_vec)
+        x_star = solve_system(L, b_vec)
         row = 0
         for el in x_star:
             matrix_chol[row][col] = el
@@ -216,7 +241,7 @@ if __name__ == "__main__":
     if np.linalg.det(L) * np.linalg.det(L_t) == 0:
         print("Determinant is 0")
         exit(0)
-    x_sol = solve_system(L, L_t, vec)
+    x_sol = solve_system(L, vec)
     norm = verify_sol(matrix, x_sol, vec)
     x_sol_np = np.linalg.solve(matrix, vec)
     norm_np = np.matmul(matrix, x_sol_np)
@@ -231,8 +256,11 @@ if __name__ == "__main__":
     # print(inv_custom)
     # print(inv_np)
     print("Norm of ||A_chol - A_bibl||:", np.linalg.norm(inv_custom - inv_np, ord = 1))
-    print("--- %s seconds ---" % (time.time() - start_time))
 
-    testm = matrixtri_to_vec(matrix)
-    lower = np.zeros(len(testm))
-    print(cholesky_factorization_flat(testm, 0, matrix.shape[0], lower))
+    bonus_matrix = matrixtri_to_vec(matrix)
+    lower = np.zeros(len(bonus_matrix))
+    bonus_L = bonus_cholesky_factorization(bonus_matrix, matrix.shape[0], 0, lower)
+    bonus_x_sol = bonus_solve_system(bonus_L, matrix.shape[0], vec)
+    bonus_norm = verify_sol(matrix, bonus_x_sol, vec)
+    print("Bonus norm is: ", bonus_norm)
+    print("--- %s seconds ---" % (time.time() - start_time))
