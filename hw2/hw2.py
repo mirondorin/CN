@@ -96,6 +96,37 @@ def cholesky_factorization(system, n, col, lower):
         return lower
     return cholesky_factorization(system, n, col, lower)
 
+def cholesky_factorization_flat(system, col, n, lower):
+    prev_sum = 0
+
+    for row in range (0, n):
+        if col == row:
+            for k in range(0, col):
+                prev_sum += lower[col + k] ** 2
+            lower[row + col] = np.sqrt(system[row+col] - prev_sum)
+        elif col < row:
+            prev_sum = 0
+            for k in range(0, col):
+                prev_sum += lower[row+k] * lower[col+k]
+            if abs(lower[col+col]) > EPS:
+                lower[row+col] = (system[row+col] - prev_sum) / lower[col+col]
+            else:
+                lower[row+col] = 10e-12
+
+    col += 1
+    if col == n: 
+        return lower
+    return cholesky_factorization_flat(system, col, n, lower)
+
+
+def matrixtri_to_vec(matrix):
+    flat = []
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            if(j <= i):
+                flat.append(matrix[i][j])
+    return np.array(flat)
+
 def solve_system(L, L_t, b_vec):
     n = L.shape[0]
     y_vec = [0 for i in range(0, n)]
@@ -166,10 +197,12 @@ def aprox_inverse(matrix, matrix_chol, L, L_t):
         b_vec[col] = 0
     return matrix_chol
 
+
+
 if __name__ == "__main__":
     start_time = time.time()
-    matrix, vec = generate_random_spd(100)
-    matrix = datasets.make_spd_matrix(100)
+    matrix, vec = generate_random_spd(3)
+    matrix = datasets.make_spd_matrix(3)
 
     #matrix = read_matrix_file('matrix.txt')
     #write_matrix_file('test.txt', matrix)
@@ -199,3 +232,7 @@ if __name__ == "__main__":
     # print(inv_np)
     print("Norm of ||A_chol - A_bibl||:", np.linalg.norm(inv_custom - inv_np, ord = 1))
     print("--- %s seconds ---" % (time.time() - start_time))
+
+    testm = matrixtri_to_vec(matrix)
+    lower = np.zeros(len(testm))
+    print(cholesky_factorization_flat(testm, 0, matrix.shape[0], lower))
