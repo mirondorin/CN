@@ -135,7 +135,7 @@ def read_matrix_keyboard():
 
 def aprox_inverse(matrix, matrix_chol, L, L_t):
     n = matrix.shape[0]
-    b_vec = np.zeros((n, 1))
+    b_vec = np.zeros(n)
     for col in range(0, n):
         b_vec[col] = 1
         x_star = solve_system(L, L_t, b_vec)
@@ -170,10 +170,8 @@ if __name__ == "__main__":
     # print(L_t_np)
     matrix_chol = np.zeros((matrix.shape[0], matrix.shape[1]))
     inv_custom = aprox_inverse(matrix, matrix_chol, L, L_t)
-    # inv_custom = np.array(get_matrix_inverse(L))
-    inv_np = np.linalg.pinv(matrix)
+    inv_np = np.linalg.inv(matrix)
     # print(inv_custom)
     # print(inv_np)
-    # I think inv_np is computed wrong
     print("Norm of ||A_chol - A_bibl||:", np.linalg.norm(inv_custom - inv_np, ord = 1))
     print("--- %s seconds ---" % (time.time() - start_time))
