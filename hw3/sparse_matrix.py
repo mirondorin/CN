@@ -29,6 +29,19 @@ class SparseMatrix:
                             values[i].insert(0, other.values[i][j])
             return SparseMatrix(self.rows, self.cols, values)
 
+    def __mul__(self, other):
+        if self.rows != other.rows or self.cols != other.cols:
+            print("Matrices have different sizes")
+            return None
+        else:
+            matrix = SparseMatrix()
+            for i in range(0, self.rows + 1):
+                for j in range(0, len(self.values[i])):
+                    value, col = self.values[i][j][0], self.values[i][j][1]
+                    for k in range(0, len(other.values[col])):
+                        matrix.insert(other.values[col][k][0] * value, i, other.values[col][k][1])
+            return matrix
+
     def __eq__(self, other):
         if self.rows != other.rows or self.cols != other.cols:
             print("Matrices have different sizes")
@@ -42,7 +55,6 @@ class SparseMatrix:
                 for j in range(0, len(self.values[i])):
                     if self.values[i][j][1] != other.values[i][j][1] or \
                         abs(self.values[i][j][0] - other.values[i][j][0]) > EPS:
-                            print(self.values[i][j][0], other.values[i][j][0])
                             return False
             return True
 

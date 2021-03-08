@@ -1,9 +1,12 @@
 import sparse_matrix as spm
+import time
 
 a_matrix = spm.SparseMatrix()
 b_matrix = spm.SparseMatrix()
 aplusb_matrix = spm.SparseMatrix()
 aplusb_file_matrix = spm.SparseMatrix()
+aorib_matrix = spm.SparseMatrix()
+aorib_file_matrix = spm.SparseMatrix()
 
 def parse_normal_matrix(file_name, matrix):
     with open(file_name, 'r') as f:
@@ -47,8 +50,13 @@ def parse_tri_matrix(file_name, matrix):
             row += 1
             col += 1
 
+start_time = time.time()
 parse_normal_matrix("a.txt", a_matrix)
 parse_tri_matrix("b.txt", b_matrix)
 parse_normal_matrix("aplusb.txt", aplusb_file_matrix)
+parse_normal_matrix("aorib.txt", aorib_file_matrix)
 aplusb_matrix = a_matrix + b_matrix
-print(aplusb_matrix == aplusb_file_matrix)
+print("a+b == a+b", aplusb_matrix == aplusb_file_matrix)
+aorib_matrix = a_matrix * b_matrix
+print("a*b == a*b", aorib_matrix == aorib_file_matrix)
+print("--- %s seconds ---" % (time.time() - start_time))
