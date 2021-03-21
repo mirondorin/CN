@@ -67,7 +67,7 @@ m2 = spm.SparseMatrix()
 finalm = spm.SparseMatrix()
 parse_tri_matrix("mat1.txt", m1)
 parse_tri_matrix("mat2.txt", m2)
-finalm = m1 + m2
+finalm = m1 * m2
 
 with open('mat3.txt', 'w') as f:
     mat = []
