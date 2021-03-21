@@ -42,6 +42,18 @@ class SparseMatrix:
                         matrix.insert(other.values[col][k][0] * value, i, other.values[col][k][1])
             return matrix
 
+    def __rmul__(self, other: []):
+        if len(other) != self.rows+1:
+            return None
+        else:
+            result = []
+            for i in range(0, self.rows+1):
+                value = 0
+                for entry in self.values[i]:
+                    value += entry[0] * other[entry[1]]
+                result.append(value)
+            return result
+
     def __eq__(self, other):
         if self.rows != other.rows or self.cols != other.cols:
             print("Matrices have different sizes")
