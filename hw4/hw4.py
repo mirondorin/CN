@@ -101,7 +101,7 @@ def solve(a_file, f_file):
     parse_f(f_file)
     x_gs = [0] * n_size
     k = 0
-    k_max = 100
+    k_max = 1000
     while True:
         norm = 0
         for i in range(0, n_size):
@@ -117,10 +117,11 @@ def solve(a_file, f_file):
                     m_diag = val
             prev_x = x_gs[i]
             x_gs[i] = (vec_f[i] - c_sum - b_sum) / m_diag
-            norm += (prev_x - x_gs[i]) ** 2
-        if norm == math.inf:
-            print("Solution diverges")
-            break
+            try: 
+                norm += (prev_x - x_gs[i]) ** 2
+            except OverflowError:
+                print("Result too large. Solution diverges")
+                exit(0)
 
         if norm < EPS or k > k_max:
             break
